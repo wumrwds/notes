@@ -1,6 +1,6 @@
 # Redis
 
-##1. 数据结构
+## 1. 数据结构
 
 ### 1.1. 简单动态字符串（SDS，simple dynamic string）
 
@@ -21,7 +21,7 @@ struct sdshdr {
 
 例如下图SDS示例，数组总长度是5（其实还有一个'\\0'，是6），全部已经使用，free是0
 
-<img src="pics/image-20210529152227074.png" alt="image-20210529152227074" style="zoom:50%;" />
+<img src="https://raw.githubusercontent.com/wumrwds/notes/main/Redis/pics/image-20210529152227074.png" alt="image-20210529152227074" style="zoom:50%;" />
 
 *   如果buf[]长度不够怎么办？
     *   C提供的\<String.h\>/strcat函数可以往目标字符串数组后面拼接新的字符串
@@ -63,7 +63,7 @@ C语言中，字符串的结尾是通过 `'\0'` 来判断的，因此如果要�
 
 Redis链表实现如下：
 
-<img src="pics/image-20210529171120508.png" alt="image-20210529171120508" style="zoom:50%;" />
+<img src="https://raw.githubusercontent.com/wumrwds/notes/main/Redis/pics/image-20210529171120508.png" alt="image-20210529171120508" style="zoom:50%;" />
 
 优势
 
@@ -77,7 +77,7 @@ Redis链表实现如下：
 
 Redis字典底层由hash表实现，大致如下：
 
-![image-20210529171546122](pics/image-20210529171546122.png)
+![image-20210529171546122](https://raw.githubusercontent.com/wumrwds/notes/main/Redis/pics/image-20210529171546122.png)
 
 *   最左端的dict是字典对象，type和privdata用于实现泛型，rehashidx用于标示是否在进行rehash，-1表示当前dict没在进行rehash
 
@@ -130,7 +130,7 @@ Redis字典底层由hash表实现，大致如下：
 
 ### 1.4. 跳表
 
-![image-20210603001912647](pics/image-20210603001912647.png)
+![image-20210603001912647](https://raw.githubusercontent.com/wumrwds/notes/main/Redis/pics/image-20210603001912647.png)
 
 *   跳表是一种在节点上添加多层次辅助节点的有序链表 ，辅助节点两层间，下层和上层的节点数是2:1
 *   核心：每层缩小一半的规模，从而达到O(log N)的性能
@@ -141,13 +141,13 @@ Redis字典底层由hash表实现，大致如下：
 *   因此实际中，为了保持上层比下层规模少一半这个特性，可以考虑用随机化算法，保持平均规模在一半
 *   随机化跳表：
     *   每层维护时，用一个一半一半的（50%/50%）抛硬币函数（flipcoin）来决定当前节点是否存在于再上一层中
-    *   ![image-20210603002235908](pics/image-20210603002235908.png)
+    *   ![image-20210603002235908](https://raw.githubusercontent.com/wumrwds/notes/main/Redis/pics/image-20210603002235908.png)
     *   即：上图中，维护L1层时，遍历L0层，遍历每个节点时，抛硬币，正面则维护该节点至L1层，否则跳过
 *   跳表的查找
     *   从最上层开始，找到第一个cur.val < target && target < next.val的节点，往下下沉，直到找到target或遍历到null为止
 *   随机化跳表的维护
     *   插入：调用跳表查找函数，找到应当插入的位置；然后new一个新节点，再开始摇硬币，正面则加一层，直到摇到反面 停止，然后串起需要维护的指针
-    *   <img src="pics/image-20210603003210999.png" alt="image-20210603003210999" style="zoom: 35%;" />
+    *   <img src="https://raw.githubusercontent.com/wumrwds/notes/main/Redis/pics/image-20210603003210999.png" alt="image-20210603003210999" style="zoom: 35%;" />
     *   删除：调用跳表查找函数，找到后将其删除，然后维护各指针（串到下一个去）
     *   可以想象就是插入9的反过程，把9拿掉，还原到插入9前的状态（因为插入前是平均perfect的，那么删除后也是平均perfect的，所以直接删就行，不用抛硬币了）
 *   跳表的优势
@@ -174,12 +174,12 @@ Redis字典底层由hash表实现，大致如下：
 
 *   传统数组的缺陷 要为每个元素分配一样大小的空间（比如1000个元素，有一个长度100，其他都是5）；传统链表的缺陷，需要花费大量空间存储指针（prev、next、value），如果元素本身非常小，却花费大量空间存储这些辅助指针，显然是不划算的
 
-<img src="pics/image-20210606092206023.png" alt="image-20210606092206023" style="zoom:50%;" />
+<img src="https://raw.githubusercontent.com/wumrwds/notes/main/Redis/pics/image-20210606092206023.png" alt="image-20210606092206023" style="zoom:50%;" />
 
 *   压缩链表是一种由连续内存块组成的更加节省内存结构的链表结构，其格式如上图所示；压缩链表一般适用于空间占用比较小的数据的存储（如小整数、短字符串）
 *   entryX即为列表节点；因为都是连续内存块，不需要像普通链表那样存储指针，所以更节省内存
 *   entryX结构如下图所示
-    *   <img src="pics/image-20210606095754943.png" alt="image-20210606095754943" style="zoom:50%;" />
+    *   <img src="https://raw.githubusercontent.com/wumrwds/notes/main/Redis/pics/image-20210606095754943.png" alt="image-20210606095754943" style="zoom:50%;" />
     *   其中previous_entry_length记录的是上一个entry的长度；encoding记录了当前entry保存的内容的格式（是整数还是字节数组）及长度；content保存了具体内容
 *   遍历压缩链表的流程：
     *   通过zltail算出末尾entry的地址
@@ -192,7 +192,7 @@ Redis字典底层由hash表实现，大致如下：
 
 ### 1.7. 对象
 
-<img src="pics/image-20210529151017755.png" alt="image-20210529151017755" style="zoom:50%;" />
+<img src="https://raw.githubusercontent.com/wumrwds/notes/main/Redis/pics/image-20210529151017755.png" alt="image-20210529151017755" style="zoom:50%;" />
 
 *   redis对象包含了字符串对象（string）、链表对象（list）、哈希对象（hash）、集合对象（set）、集合对象（sorted set）这五种对象，其底层实现用了之前介绍的六种结构：SDS、linkedlist、ziplist、hash table、skiplist、intset
 
@@ -230,7 +230,7 @@ Redis字典底层由hash表实现，大致如下：
         *   保存的所有hash pair 的 key/value元素的长度均小于64字节（小对象）
         *   总hash pair数小于512（且数量少）
     *   ziplist保存hash对象时，内部结构如下：
-        *   <img src="pics/image-20210606170645026.png" alt="image-20210606170645026" style="zoom:50%;" />
+        *   <img src="https://raw.githubusercontent.com/wumrwds/notes/main/Redis/pics/image-20210606170645026.png" alt="image-20210606170645026" style="zoom:50%;" />
         *   即key和对应的value紧挨着存
 
 *   集合对象
@@ -245,7 +245,7 @@ Redis字典底层由hash表实现，大致如下：
         *   元素长度小于64字节（小对象）
         *   元素数量少于128（且数量少）
     *   使用ziplist存储时，类似之前用ziplist保存hash对象的设计；score和value紧挨着；然后从左至右生序排列
-        *   <img src="pics/image-20210606171228058.png" alt="image-20210606171228058" style="zoom:50%;" />
+        *   <img src="https://raw.githubusercontent.com/wumrwds/notes/main/Redis/pics/image-20210606171228058.png" alt="image-20210606171228058" style="zoom:50%;" />
     *   使用skiplist+hashtable组合时，skiplist用于保证有序扫描，hashtable用于O(1)时间内拿到value值
         *   其中skiplist和hashtable会通过指针共享存储的元素的内容，因此不会造成空间浪费
 
@@ -453,7 +453,7 @@ Redis Cluster通过分片（sharding）来进行数据共享（即把数据分�
 
 
 
-<img src="pics/image-20210611123452354.png" alt="image-20210611123452354" style="zoom:67%;" />
+<img src="https://raw.githubusercontent.com/wumrwds/notes/main/Redis/pics/image-20210611123452354.png" alt="image-20210611123452354" style="zoom:67%;" />
 
 基本实现
 
@@ -518,13 +518,13 @@ Redis集群通过分片（sharding）的方式来将key-value数据保存在集�
 
 槽指派数组（因此可以是不连续的）：
 
-<img src="pics/image-20210611182705371.png" alt="image-20210611182705371" style="zoom:25%;" />
+<img src="https://raw.githubusercontent.com/wumrwds/notes/main/Redis/pics/image-20210611182705371.png" alt="image-20210611182705371" style="zoom:25%;" />
 
 
 
 #### Redis集群如何实现高可用
 
-![image-20210611182447794](pics/image-20210611182447794.png)
+![image-20210611182447794](https://raw.githubusercontent.com/wumrwds/notes/main/Redis/pics/image-20210611182447794.png)
 
 *   会为每个master节点配备1到N个从节点（图中的最中间四台为master）
 *   redis集群无法保证强一致性：例如client写入master 1，返回OK，然而master 1的从节点还没完成同步复制，master 1就挂了，就会丢数据
@@ -600,13 +600,13 @@ Redis集群通过分片（sharding）的方式来将key-value数据保存在集�
 
 ### 6.1. Redis的线程模型
 
-<img src="pics/image-20210612152942769.png" alt="image-20210612152942769" style="zoom:50%;" />
+<img src="https://raw.githubusercontent.com/wumrwds/notes/main/Redis/pics/image-20210612152942769.png" alt="image-20210612152942769" style="zoom:50%;" />
 
-<img src="pics/image-20210612204554178.png" alt="image-20210612204554178" style="zoom:57%;" />
+<img src="https://raw.githubusercontent.com/wumrwds/notes/main/Redis/pics/image-20210612204554178.png" alt="image-20210612204554178" style="zoom:57%;" />
 
-<img src="pics/image-20210612204631559.png" alt="image-20210612204631559" style="zoom: 67%;" />
+<img src="https://raw.githubusercontent.com/wumrwds/notes/main/Redis/pics/image-20210612204631559.png" alt="image-20210612204631559" style="zoom: 67%;" />
 
-<img src="pics/image-20210612204906124.png" alt="image-20210612204906124" style="zoom:50%;" />
+<img src="https://raw.githubusercontent.com/wumrwds/notes/main/Redis/pics/image-20210612204906124.png" alt="image-20210612204906124" style="zoom:50%;" />
 
 *   基于Reactor模式（event-driven）；
     *   由一个IO多路复用程序监听连接客户端的Socket
